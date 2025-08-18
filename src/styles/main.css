@@ -1,5 +1,14 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
+@import 'tw-animate-css';
+
+@font-face {
+  font-family: 'Retro Gaming';
+  src: url('/font/retro-gaming.ttf') format('truetype');
+}
+
+@theme {
+  --font-retro-gaming: Retro Gaming, sans-serif;
+}
 
 @custom-variant dark (&:is(.dark *));
 
