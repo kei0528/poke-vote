@@ -1,5 +1,5 @@
 import type { StepActionYesNo as StepActionYesNoType } from "@/types/step.type";
-import { Button } from "../button";
+import Button from "../Button";
 import { useEffect, useRef } from "react";
 
 const StepActionYesNo = ({
