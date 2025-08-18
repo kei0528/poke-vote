@@ -2,7 +2,13 @@ import type { StepActionYesNo as StepActionYesNoType } from "@/types/step.type";
 import { Button } from "../button";
 import { useEffect, useRef } from "react";
 
-const StepActionYesNo = ({ action }: { action: StepActionYesNoType }) => {
+const StepActionYesNo = ({
+  action,
+  className = "",
+}: {
+  action: StepActionYesNoType;
+  className?: string;
+}) => {
   const buttonYes = useRef<HTMLButtonElement>(null);
   const buttonNo = useRef<HTMLButtonElement>(null);
 
@@ -23,8 +29,16 @@ const StepActionYesNo = ({ action }: { action: StepActionYesNoType }) => {
   }, []);
 
   return (
-    <div className="w-fit rounded-xl relative border-x-8 border-y-5 border-[#DE4340] bg-[#6BA2A5] [background-clip:padding-box] pl-6 pr-4 py-3 [&_*]:text-white">
-      <Button autoFocus variant="step" onClick={action.yes} ref={buttonYes}>
+    <div
+      className={`w-fit rounded-xl h-fit relative border-x-8 border-y-5 border-[#746A88] bg-[#FFFBFF] [background-clip:padding-box] pl-6 pr-4 py-3 [&_*]:text-stone-950 ${className}`}
+    >
+      <Button
+        autoFocus
+        variant="step"
+        onClick={action.yes}
+        ref={buttonYes}
+        className="mb-2"
+      >
         Yes
       </Button>
       <Button variant="step" onClick={action.no} ref={buttonNo}>

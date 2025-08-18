@@ -1,3 +1,4 @@
+import LayoutGBA from "@/components/ui/Layout";
 import MessageBox from "@/components/ui/MessageBox";
 import StepActionYesNo from "@/components/ui/StepAction";
 import { useSteps } from "@/hooks/useSteps";
@@ -32,17 +33,22 @@ export const Home = () => {
   ]);
 
   const { currentStep } = useSteps({
-    max: steps.current.length - 1,
+    max: steps.current.length,
   });
 
   return (
-    <main className="bg-stone-950 min-h-dvh">
-      <div className="px-5 max-w-2xl mx-auto py-16">
-        {steps.current[currentStep].action?.type === "yesno" && (
-          <StepActionYesNo action={steps.current[currentStep].action} />
-        )}
-        <MessageBox key={currentStep} text={steps.current[currentStep].text} />
-      </div>
-    </main>
+    <LayoutGBA>
+      {steps.current[currentStep].action?.type === "yesno" && (
+        <StepActionYesNo
+          action={steps.current[currentStep].action}
+          className="mt-4 mr-4 ml-auto"
+        />
+      )}
+      <MessageBox
+        key={currentStep}
+        text={steps.current[currentStep].text}
+        className="mt-auto"
+      />
+    </LayoutGBA>
   );
 };

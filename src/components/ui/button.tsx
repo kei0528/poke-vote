@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "",
-        step: "relative pl-4 pr-2 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-3 before:bg-[url('/svg/triangle-white-right.svg')] before:bg-no-repeat before:bg-contain hover:before:block focus-visible:before:block before:hidden",
+        step: "relative pl-4 pr-2 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-3 before:bg-[url('/svg/triangle-black-right.svg')] before:bg-no-repeat before:bg-contain hover:before:block focus-visible:before:block before:hidden",
       },
     },
     defaultVariants: {

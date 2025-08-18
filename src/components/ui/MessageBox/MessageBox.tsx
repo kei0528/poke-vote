@@ -1,8 +1,16 @@
 import Typewriter from "../Typewriter";
 
-const MessageBox = ({ text }: { text: string }) => {
+const MessageBox = ({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) => {
   return (
-    <div className="min-h-[92px] rounded-xl relative border-x-8 border-y-6 border-[#DE4340] bg-[#6BA2A5] [background-clip:padding-box] px-6 py-3 [&_*]:text-white">
+    <div
+      className={`min-h-[92px] rounded-xl relative border-x-8 border-y-6 border-[#DE4340] bg-[#6BA2A5] [background-clip:padding-box] px-6 py-3 [&_*]:text-white ${className}`}
+    >
       <Typewriter key={text} text={text} />
       <img
         src="/svg/triangle-white-down.svg"
