@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 type Params = {
   max: number;
@@ -22,7 +22,7 @@ export const useSteps = ({ max }: Params): Returns => {
     }
 
     function onKeyup(e: KeyboardEvent) {
-      if (e.code === "Space") {
+      if (e.code === 'Space') {
         onNext();
       }
     }
@@ -32,12 +32,12 @@ export const useSteps = ({ max }: Params): Returns => {
       onNext();
     }
 
-    window.addEventListener("keyup", onKeyup);
-    window.addEventListener("click", onClick);
+    window.addEventListener('keyup', onKeyup);
+    window.addEventListener('click', onClick);
 
     return () => {
-      window.removeEventListener("keyup", onKeyup);
-      window.removeEventListener("click", onClick);
+      window.removeEventListener('keyup', onKeyup);
+      window.removeEventListener('click', onClick);
     };
   }, []);
 

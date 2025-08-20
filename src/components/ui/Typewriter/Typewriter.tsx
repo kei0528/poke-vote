@@ -1,10 +1,10 @@
 import TypewriterComponent from 'typewriter-effect';
 
-const Typewriter = ({ text }: { text: string }) => {
+const Typewriter = ({ text, className }: { text: string; className?: string }) => {
   return (
-    <div className='[&_*]:font-retro-gaming'>
+    <div className={className}>
       <TypewriterComponent
-        onInit={typewriter => {
+        onInit={(typewriter) => {
           typewriter.typeString(text).pauseFor(25).start();
         }}
         options={{ delay: 40 }}

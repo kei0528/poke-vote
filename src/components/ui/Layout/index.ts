@@ -1,1 +1,1 @@
-export { default } from "./LayoutGBA";
+export { default } from './LayoutGBA';

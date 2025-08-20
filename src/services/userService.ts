@@ -17,7 +17,7 @@ export class UserService {
 
   getCurrentUser(): User {
     return {
-      id: this.id
+      id: this.id,
     };
   }
 }

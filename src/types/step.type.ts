@@ -1,11 +1,11 @@
 export type StepActionYesNo = {
-  type: "yesno";
+  type: 'yesno';
   yes: () => void;
   no: () => void;
 };
 
 export type StepActionFourOptions = {
-  type: "fourOptions";
+  type: 'fourOptions';
   options: {
     label: string;
     onSelect: () => void;

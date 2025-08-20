@@ -1,1 +1,1 @@
-export { default } from "./Typewriter.tsx";
+export { default } from './Typewriter.tsx';

@@ -1,9 +1,13 @@
-import type { ReactNode } from "react";
+import { cn } from '@/styles/shadcn';
+import type { ReactNode } from 'react';
 
-const LayoutGBA = ({ children }: { children: ReactNode }) => {
+const LayoutGBA = ({ children, className = '' }: { children: ReactNode; className?: string }) => {
   return (
-    <main className="bg-stone-950 min-h-dvh flex items-center justify-center">
-      <div className="px-5 w-full max-w-2xl mx-auto py-10 max-h-[480px] h-[75dvh] min-h-[360px] grid bg-stone-900 rounded-4xl">
+    <main className={cn('flex min-h-dvh items-center justify-center bg-stone-950', className)}>
+      <div
+        data-id="gba-inner"
+        className="relative mx-auto grid min-h-[55dvh] w-full max-w-[660px] rounded-4xl bg-stone-900 px-5 py-7 sm:h-auto sm:max-h-none sm:min-h-[500px]"
+      >
         {children}
       </div>
     </main>

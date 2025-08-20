@@ -1,1 +1,1 @@
-export { default } from "./StepActionYesNo";
+export { default } from './StepActionYesNo';
