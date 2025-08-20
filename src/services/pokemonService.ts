@@ -12,15 +12,23 @@ export class PokemonService {
     const res = await fetch(`${this.API_URL}/${id}`);
     if (!res.ok) throw new Error(`Failed to fetch Pokémon with id ${id}`);
 
-    const { id: pokeId, name, sprites, weight, height, base_experience: baseExperience, cries } = await res.json();
+    const {
+      id: pokeId,
+      name,
+      sprites,
+      weight,
+      height,
+      base_experience: baseExperience,
+      cries,
+    } = await res.json();
     return {
       id: pokeId,
       name: name,
       img: sprites.front_default,
-      weight: weight,
-      height: height,
+      weight: weight / 10, // Convert to kg,
+      height: height / 10, // Convert to m
       baseExperience: baseExperience,
-      crySound: cries.legacy || cries.latest || null
+      crySound: cries.legacy || cries.latest || null,
     };
   }
 
