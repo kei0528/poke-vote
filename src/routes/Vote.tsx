@@ -1,16 +1,19 @@
+import { useVoteContext } from '@/components/providers/VoteProvider';
 import LayoutGBA from '@/components/ui/Layout';
 import MessageBox from '@/components/ui/MessageBox';
 import StepActionYesNo from '@/components/ui/StepAction';
 import VoteCard from '@/components/ui/VoteCard';
 import type { Pokemon } from '@/types/pokemon.type';
 import { useState } from 'react';
-import { useLoaderData } from 'react-router';
+import { useLoaderData, useNavigate } from 'react-router';
 
 const Vote = () => {
   const { pokemonsToVote } = useLoaderData<{
     pokemonsToVote: [Pokemon, Pokemon];
   }>();
   const [pokemonSelected, setPokemonSelected] = useState<Pokemon | null>(null);
+  const { setPokemonVoted } = useVoteContext();
+  const navigate = useNavigate();
 
   return (
     <LayoutGBA className="[&_[data-id='gba-inner']]:content-start [&_[data-id='gba-inner']]:gap-5 [&_[data-id='gba-inner']]:bg-[repeating-linear-gradient(0deg,#fffbff,#fffbff_10px,#F7EBC5_10px,#F7EBC5_20px)]">
@@ -30,10 +33,11 @@ const Vote = () => {
           <StepActionYesNo
             className="mt-16 mr-4 ml-auto"
             action={{
-              yes: () => {},
-              no: () => {
-                setPokemonSelected(null);
+              yes: () => {
+                setPokemonVoted(pokemonSelected);
+                navigate('/vote/result');
               },
+              no: () => void setPokemonSelected(null),
             }}
           />
           <MessageBox
