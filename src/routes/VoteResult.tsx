@@ -44,7 +44,6 @@ const VoteResult = () => {
               <img className="mx-auto h-24 w-24 sm:h-32 sm:w-32" alt="" src={pokemon.img} />
 
               <figcaption className="flex flex-col items-center">
-                <p className="text-center text-yellow-600">#1 Trainer's Choice</p>
                 <div className="flex sm:flex-col sm:items-center">
                   <p className="uppercase">{pokemon.name}</p>{' '}
                   <span className="mx-2 inline-block sm:hidden">-</span>{' '}
