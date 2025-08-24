@@ -10,8 +10,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: '',
-        submit:
-          'border-2 border-white px-3 py-0.5 bg-[#96BC69] ring-3 ring-stone-950 text-white rounded-sm hover:bg-[#5c7240] focus-visible:bg-[#5c7240] duration-100 text-sm',
+        'submit-green':
+          'border-2 border-white px-3 py-0.5 bg-[#96BC69] ring-3 ring-stone-950 text-white rounded-sm hover:bg-[#5c7240] focus-visible:bg-[#5c7240] duration-100 text-sm text-center',
+        'submit-blue':
+          'border-2 border-white px-3 py-0.5 ring-3 ring-stone-950 text-white rounded-sm text-center duration-100 text-sm bg-sky-500 text-xs hover:bg-sky-700 focus-visible:bg-sky-700"',
         step: "relative pl-4 pr-2 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-3 before:h-3 before:bg-[url('/svg/triangle-black-right.svg')] before:bg-no-repeat before:bg-contain hover:before:block focus-visible:before:block before:hidden",
       },
     },
