@@ -1,7 +1,11 @@
-export type LiveConnectionMessage<T extends object = object> = { type: string } & T;
+import type { Pokemon } from './pokemon.type';
+
+export type LiveConnectionMessage =
+  | { type: 'start_vote'; payload: { roundId: string; pair: [Pokemon, Pokemon] } }
+  | { type: 'vote'; payload: { roundId: string; choiceId: number } };
+
 export type LiveConnectionRole = 'host' | 'guest';
-export type LiveConnectionState = 'connected' | 'disconnected' | 'connecting';
-export interface Peer {
+export interface Guest {
   id: string;
   pc: RTCPeerConnection;
   dc: RTCDataChannel | null;

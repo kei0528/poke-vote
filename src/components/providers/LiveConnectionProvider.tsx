@@ -1,36 +1,15 @@
 import { STUN_URL } from '@/statics/dataChannel';
-import type {
-  LiveConnectionMessage,
-  LiveConnectionRole,
-  LiveConnectionState,
-  Peer,
-} from '@/types/liveConnection.type';
-import {
-  messageToPeers,
-  parseSDP,
-  setupDataChannel,
-  waitForIceComplete,
-} from '@/utils/dataChannel';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from 'react';
+import type { LiveConnectionMessage, LiveConnectionRole, Guest } from '@/types/liveConnection.type';
+import { messageToGuests, parseSDP, waitForIceComplete } from '@/utils/dataChannel';
+import { generateShortUUID } from '@/utils/uuid';
+import { createContext, useContext, useState, type Dispatch, type SetStateAction } from 'react';
+import { useNavigate } from 'react-router';
 
 const LiveConnectionContext = createContext<{
   role: LiveConnectionRole | null;
   setRole: Dispatch<SetStateAction<LiveConnectionRole | null>>;
-  connectionState: LiveConnectionState;
-  setConnectionState: Dispatch<SetStateAction<LiveConnectionState>>;
-  peers: Peer[];
-  setPeers: Dispatch<SetStateAction<Peer[]>>;
-  guestLocalSDP: string;
-  setGuestLocalSDP: Dispatch<SetStateAction<string>>;
-  guestRemoteSDP: string;
-  setGuestRemoteSDP: Dispatch<SetStateAction<string>>;
+  guests: Guest[];
+  setGuests: Dispatch<SetStateAction<Guest[]>>;
   guestDcState: RTCDataChannelState | 'none';
   setGuestDcState: Dispatch<RTCDataChannelState | 'none'>;
   guestPc: RTCPeerConnection | null;
@@ -40,14 +19,8 @@ const LiveConnectionContext = createContext<{
 }>({
   role: null,
   setRole: () => {},
-  connectionState: 'disconnected',
-  setConnectionState: () => {},
-  peers: [],
-  setPeers: () => [],
-  guestLocalSDP: '',
-  setGuestLocalSDP: () => {},
-  guestRemoteSDP: '',
-  setGuestRemoteSDP: () => {},
+  guests: [],
+  setGuests: () => [],
   guestDcState: 'none',
   setGuestDcState: () => {},
   guestPc: null,
@@ -58,44 +31,19 @@ const LiveConnectionContext = createContext<{
 
 const LiveConnectionProvider = ({ children }: { children: React.ReactNode }) => {
   const [role, setRole] = useState<LiveConnectionRole | null>(null);
-  const [status, setStatus] = useState<LiveConnectionState>('disconnected');
-  const [peers, setPeers] = useState<Peer[]>([]);
+  const [guests, setGuests] = useState<Guest[]>([]);
 
   const [guestPc, setGuestPc] = useState<RTCPeerConnection | null>(null);
   const [guestDc, setGuestDc] = useState<RTCDataChannel | null>(null);
-  const [guestLocalSDP, setGuestLocalSDP] = useState('');
-  const [guestRemoteSDP, setGuestRemoteSDP] = useState('');
   const [guestDcState, setGuestDcState] = useState<RTCDataChannelState | 'none'>('none');
-
-  // Setting connection state
-  useEffect(() => {
-    // TODO: Condition needs to be improved
-    const isConnecting =
-      role === 'host'
-        ? peers.some((p) => p.pc.connectionState === 'connecting')
-        : guestPc?.connectionState === 'connecting';
-
-    const isConnected =
-      role === 'host'
-        ? peers.some((p) => p.pc.connectionState === 'connected')
-        : guestPc?.connectionState === 'connected';
-
-    setStatus(isConnecting ? 'connecting' : isConnected ? 'connected' : 'disconnected');
-  }, [role, peers, guestPc?.connectionState]);
 
   return (
     <LiveConnectionContext.Provider
       value={{
         role,
         setRole,
-        connectionState: status,
-        setConnectionState: setStatus,
-        peers,
-        setPeers,
-        guestLocalSDP,
-        setGuestLocalSDP,
-        guestRemoteSDP,
-        setGuestRemoteSDP,
+        guests,
+        setGuests,
         guestDcState,
         setGuestDcState,
         guestPc,
@@ -110,17 +58,12 @@ const LiveConnectionProvider = ({ children }: { children: React.ReactNode }) => 
 };
 
 export const useLiveConnection = () => {
+  const navigate = useNavigate();
   const {
     role,
     setRole,
-    connectionState,
-    setConnectionState,
-    peers,
-    setPeers,
-    guestLocalSDP,
-    setGuestLocalSDP,
-    guestRemoteSDP,
-    setGuestRemoteSDP,
+    guests,
+    setGuests,
     guestDcState,
     setGuestDcState,
     guestPc,
@@ -128,89 +71,92 @@ export const useLiveConnection = () => {
     guestDc,
     setGuestDc,
   } = useContext(LiveConnectionContext);
+  const [isPreparingGuestOffer, setIsPreparingGuestOffer] = useState(false);
+  const [isApplyingAnswer, setIsApplyingAnswer] = useState(false);
 
-  const hostCreatePeerOffer = async () => {
+  /**
+   * Initialize Host and declare actions
+   */
+  const initHost = async () => {
     if (role !== 'host') return;
+    setIsPreparingGuestOffer(true);
+
     const pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
     const dc = pc.createDataChannel('votes');
+    const id = `guest-${generateShortUUID()}`;
 
-    function onInit(peer: Peer) {
-      setPeers((state) => state.map((x) => (x.id === peer.id ? { ...peer } : x)));
-    }
+    const guest: Guest = { id, pc, dc, state: 'none', localSDP: '', remoteSDP: '' };
 
-    function onOpen(peer: Peer) {
-      setPeers((state) => state.map((x) => (x.id === peer.id ? { ...peer } : x)));
-      // dc.send(JSON.stringify({ type: 'sync', votes } satisfies Msg)); //TODO: Sync votes
-    }
+    // DataChannel handlers
+    const attachDc = (channel: RTCDataChannel) => {
+      guest.dc = channel;
+      guest.state = channel.readyState;
+      setGuests((arr) => arr.map((x) => (x.id === guest.id ? { ...guest } : x)));
 
-    function onClose(peer: Peer) {
-      setPeers((state) => state.map((x) => (x.id === peer.id ? { ...peer } : x)));
-    }
-
-    function onError(peer: Peer) {
-      setPeers((state) => state.map((x) => (x.id === peer.id ? { ...peer } : x)));
-    }
-
-    function onMessage(_: Peer, message: MessageEvent) {
-      const msg = JSON.parse(message.data) as LiveConnectionMessage; // TODO: Do something
-      // if (msg.type === 'vote') {
-      //   setVotes((v) => {
-      //     const nv = { ...v, [msg.choice]: v[msg.choice] + 1 } as Record<VoteChoice, number>;
-      //     // ブロードキャスト
-      //     broadcast({ type: 'sync', votes: nv });
-      //     return nv;
-      //   });
-      // }
-    }
-
-    const params = {
-      peerConnection: pc,
-      onInit,
-      onOpen,
-      onClose,
-      onError,
-      onMessage,
+      channel.onopen = () => {
+        guest.state = channel.readyState;
+        setGuests((arr) => arr.map((x) => (x.id === guest.id ? { ...guest } : x)));
+      };
+      channel.onclose = () => {
+        guest.state = channel.readyState;
+        setGuests((arr) => arr.map((x) => (x.id === guest.id ? { ...guest } : x)));
+      };
+      channel.onerror = () => {
+        guest.state = channel.readyState;
+        setGuests((arr) => arr.map((x) => (x.id === guest.id ? { ...guest } : x)));
+      };
+      channel.onmessage = () => {};
     };
 
-    const peer = setupDataChannel({
-      ...params,
-      channel: dc,
-    });
+    attachDc(dc);
 
-    pc.ondatachannel = (ev) => setupDataChannel({ ...params, channel: ev.channel });
+    pc.ondatachannel = (ev) => attachDc(ev.channel);
+
     pc.onconnectionstatechange = () => {
-      setPeers((state) => state.map((x) => (x.id === peer.id ? { ...peer } : x)));
+      setGuests((state) => state.map((x) => (x.id === guest.id ? { ...guest } : x)));
     };
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     await waitForIceComplete(pc);
-    peer.localSDP = JSON.stringify(pc.localDescription);
-    setPeers((state) => [...state, peer]);
+    guest.localSDP = JSON.stringify(pc.localDescription);
+    setGuests((state) => [...state, guest]);
+    setIsPreparingGuestOffer(false);
   };
 
-  const hostApplyAnswer = async (peerId: string) => {
-    const peer = peers.find((p) => p.id === peerId);
-    if (!peer) return;
-    if (!peer.remoteSDP) return alert('Please set remote SDP first.');
-    await peer.pc.setRemoteDescription(parseSDP(peer.remoteSDP));
+  /**
+   * Apply answer SDP from Guest
+   */
+  const hostApplyAnswer = async (peerId: string, remoteSDP: string) => {
+    setIsApplyingAnswer(true);
+    const guest = guests.find((p) => p.id === peerId);
+    if (!guest) return;
+    setGuests((arg) => arg.map((x) => (x.id === guest.id ? { ...x, remoteSDP } : x)));
+    await guest.pc.setRemoteDescription(parseSDP(remoteSDP));
+    setIsApplyingAnswer(false);
   };
 
-  const guestSetOfferCreateAnswer = async () => {
-    if (!guestRemoteSDP) return alert('Please set remote SDP first.');
+  /**
+   * Initialize Guest and declare actions
+   */
+  const initGuest = async (guestRemoteSDP: string): Promise<string> => {
     const pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
     setGuestPc(pc);
 
-    pc.ondatachannel = (ev) => {
-      const ch = ev.channel;
-      setGuestDc(ch);
-      setGuestDcState(ch.readyState);
+    pc.ondatachannel = ({ channel }) => {
+      setGuestDc(channel);
+      setGuestDcState(channel.readyState);
 
-      ch.onopen = () => setGuestDcState(ch.readyState);
-      ch.onclose = () => setGuestDcState(ch.readyState);
-      ch.onerror = () => setGuestDcState(ch.readyState);
-      ch.onmessage = (ev) => {
-        const msg = JSON.parse(ev.data) as LiveConnectionMessage;
-        // if (msg.type === 'sync') setVotes(msg.votes); // TODO: Sync votes
+      channel.onopen = () => setGuestDcState(channel.readyState);
+      channel.onclose = () => setGuestDcState(channel.readyState);
+      channel.onerror = () => setGuestDcState(channel.readyState);
+      channel.onmessage = (event) => {
+        const { type, payload } = JSON.parse(event.data) as LiveConnectionMessage;
+
+        if (type === 'start_vote') {
+          const { roundId, pair } = payload;
+          navigate('/vote', { state: { roundId, pair, role: 'guest' } });
+          return;
+        }
       };
     };
 
@@ -218,9 +164,13 @@ export const useLiveConnection = () => {
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
     await waitForIceComplete(pc);
-    setGuestLocalSDP(JSON.stringify(pc.localDescription));
+    const localDesc = JSON.stringify(pc.localDescription);
+    return localDesc;
   };
 
+  /**
+   * Sending message from Guest
+   */
   const guestSendMessage = (msg: LiveConnectionMessage) => {
     const channel = guestDc;
     if (!channel || channel.readyState !== 'open') return alert('Data channel is not open.');
@@ -230,37 +180,42 @@ export const useLiveConnection = () => {
     channel.send(JSON.stringify(msg));
   };
 
+  /**
+   * Sending message from Host to all Guests
+   */
   const hostSendMessage = (msg: LiveConnectionMessage) => {
-    messageToPeers(msg, peers);
+    messageToGuests(msg, guests);
   };
 
+  /**
+   * Reset all states and connections
+   */
   const resetAll = () => {
-    peers.forEach((p) => {
+    guests.forEach((p) => {
       p.dc?.close();
       p.pc.close();
     });
-    setPeers([]);
+    setGuests([]);
 
     guestDc?.close();
     guestPc?.close();
     setGuestDc(null);
     setGuestPc(null);
     setRole(null);
-    setConnectionState('disconnected');
-    setGuestLocalSDP('');
-    setGuestRemoteSDP('');
     setGuestDcState('none');
   };
 
   return {
     role,
-    connectionState,
-    peers,
-    guestLocalSDP,
+    setRole,
+    guests,
+    setGuests,
     guestDcState,
-    hostCreatePeerOffer,
+    isPreparingGuestOffer,
+    isApplyingAnswer,
+    initHost,
     hostApplyAnswer,
-    guestSetOfferCreateAnswer,
+    initGuest,
     guestSendMessage,
     hostSendMessage,
     resetAll,
