@@ -28,7 +28,7 @@ const VoteCard = ({
             </div>
             <p>EXP: {pokemon.baseExperience}</p>
           </figcaption>
-          <Button className="mx-4 mt-3 w-32 text-xs sm:hidden" variant="submit">
+          <Button className="mx-4 mt-3 w-32 text-xs sm:hidden" variant="submit-green">
             VOTE
           </Button>
         </div>
@@ -37,7 +37,7 @@ const VoteCard = ({
       <Button
         onClick={() => void onVote(pokemon)}
         className="mx-auto my-3 hidden w-fit sm:block"
-        variant="submit"
+        variant="submit-green"
       >
         VOTE
       </Button>

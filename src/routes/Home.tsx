@@ -15,7 +15,7 @@ export const Home = () => {
       action: null,
     },
     {
-      text: 'Here, you can vote for your favorite Pokémon.',
+      text: 'Here, you can vote for your favorite Pokémon together with your friends.',
       action: null,
     },
     {
@@ -23,7 +23,7 @@ export const Home = () => {
       action: {
         type: 'yesno',
         yes: () => {
-          navigate('/vote');
+          navigate('/waiting-room');
         },
         no: () => {
           window.close();

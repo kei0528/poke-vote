@@ -3,11 +3,18 @@ import { RouterProvider } from 'react-router/dom';
 import { Home } from './Home';
 import Vote from './Vote';
 import { PokemonService } from '@/services/pokemonService';
+import VoteResult from './VoteResult';
+import Playground from './Playground';
+import WaitingRoom from './WaitingRoom';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <Home />,
+  },
+  {
+    path: '/waiting-room',
+    element: <WaitingRoom />,
   },
   {
     path: '/vote',
@@ -17,6 +24,14 @@ const router = createBrowserRouter([
       };
     },
     element: <Vote />,
+  },
+  {
+    path: '/vote/result',
+    element: <VoteResult />,
+  },
+  {
+    path: '/playground',
+    element: <Playground />,
   },
 ]);
 
