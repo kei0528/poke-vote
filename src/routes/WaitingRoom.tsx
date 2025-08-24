@@ -13,6 +13,7 @@ import { cn } from '@/styles/shadcn';
 import StepActionYesNo from '@/components/ui/StepAction';
 import { PokemonService } from '@/services/pokemonService';
 import { useNavigate } from 'react-router';
+import { useVote } from '@/components/providers/VoteProvider';
 
 const WaitingRoom = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const WaitingRoom = () => {
   const connectedUserCount = guests.filter((guest) => guest.state === 'open').length;
   const sdp = guests[guests.length - 1]?.localSDP;
 
+  const { onNewRound } = useVote();
   const [scannerDialogOpen, setScannerDialogOpen] = useState(false);
   const [responseCode, setResponseCode] = useState('');
   const [guestLocalSDP, setGuestLocalSDP] = useState('');
@@ -78,18 +80,33 @@ const WaitingRoom = () => {
 
           {(guests.length === 0 || guests[guests.length - 1]?.state !== 'connecting') && (
             <div className="mt-8 grid grid-cols-2 gap-5">
-              <Button onClick={initHost} variant="submit-blue" disabled={isPreparingGuestOffer}>
+              <Button
+                onClick={initHost}
+                variant="submit-blue"
+                disabled={
+                  isPreparingGuestOffer ||
+                  connectedUserCount >=
+                    1 /* FIXME: This version has a bug that having more than 1 guests won't be able to track the vote states correctly. */
+                }
+              >
                 Invite friend
               </Button>
               <Button
                 onClick={() => {
-                  PokemonService.getTwoRandom()
+                  PokemonService.getInitialTwo()
                     .then((pokemons) => {
                       hostSendMessage({
                         type: 'start_vote',
                         payload: { roundId: 'round-1', pair: pokemons },
                       });
-                      navigate('/vote');
+                      onNewRound({
+                        roundId: 'round-1',
+                        pair: pokemons.map((p) => p.id) as [number, number],
+                      });
+
+                      navigate('/vote', {
+                        state: { roundId: 'round-1', pair: pokemons, role: 'host' },
+                      });
                     })
                     .catch((err) => {
                       console.error(err);
@@ -199,7 +216,6 @@ const WaitingRoom = () => {
                 onChange={(e) => {
                   initGuest(e.target.value)
                     .then((answer) => {
-                      console.log('answerm', answer);
                       setGuestLocalSDP(answer);
                     })
                     .catch((err) => {

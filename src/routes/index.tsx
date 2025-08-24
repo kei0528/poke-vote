@@ -2,9 +2,7 @@ import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { Home } from './Home';
 import Vote from './Vote';
-import { PokemonService } from '@/services/pokemonService';
 import VoteResult from './VoteResult';
-import Playground from './Playground';
 import WaitingRoom from './WaitingRoom';
 
 const router = createBrowserRouter([
@@ -18,20 +16,22 @@ const router = createBrowserRouter([
   },
   {
     path: '/vote',
-    loader: async () => {
-      return {
-        pokemonsToVote: await PokemonService.getTwoRandom(),
-      };
-    },
-    element: <Vote />,
-  },
-  {
-    path: '/vote/result',
-    element: <VoteResult />,
-  },
-  {
-    path: '/playground',
-    element: <Playground />,
+    children: [
+      {
+        index: true,
+        element: <Vote />,
+      },
+      {
+        path: 'result',
+        children: [
+          { index: false },
+          {
+            path: ':roundId',
+            element: <VoteResult />,
+          },
+        ],
+      },
+    ],
   },
 ]);
 

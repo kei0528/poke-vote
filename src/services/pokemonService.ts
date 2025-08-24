@@ -8,7 +8,7 @@ export class PokemonService {
     return Math.floor(Math.random() * this.MAX_ID) + 1;
   }
 
-  private static async fetchPokemon(id: number): Promise<Pokemon> {
+  static async fetchPokemon(id: number | string): Promise<Pokemon> {
     const res = await fetch(`${this.API_URL}/${id}`);
     if (!res.ok) throw new Error(`Failed to fetch Pokémon with id ${id}`);
 
@@ -30,6 +30,15 @@ export class PokemonService {
       baseExperience: baseExperience,
       crySound: cries.legacy || cries.latest || null,
     };
+  }
+
+  static async getInitialTwo(): Promise<[Pokemon, Pokemon]> {
+    const [p1, p2] = await Promise.all([
+      this.fetchPokemon('Bulbasaur'),
+      this.fetchPokemon('Pikachu'),
+    ]);
+
+    return [p1, p2];
   }
 
   static async getTwoRandom(): Promise<[Pokemon, Pokemon]> {

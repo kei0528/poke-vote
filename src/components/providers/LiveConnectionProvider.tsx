@@ -4,6 +4,7 @@ import { messageToGuests, parseSDP, waitForIceComplete } from '@/utils/dataChann
 import { generateShortUUID } from '@/utils/uuid';
 import { createContext, useContext, useState, type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router';
+import { useVote } from './VoteProvider';
 
 const LiveConnectionContext = createContext<{
   role: LiveConnectionRole | null;
@@ -71,6 +72,7 @@ export const useLiveConnection = () => {
     guestDc,
     setGuestDc,
   } = useContext(LiveConnectionContext);
+  const { onVote, onNewRound } = useVote();
   const [isPreparingGuestOffer, setIsPreparingGuestOffer] = useState(false);
   const [isApplyingAnswer, setIsApplyingAnswer] = useState(false);
 
@@ -105,7 +107,15 @@ export const useLiveConnection = () => {
         guest.state = channel.readyState;
         setGuests((arr) => arr.map((x) => (x.id === guest.id ? { ...guest } : x)));
       };
-      channel.onmessage = () => {};
+      channel.onmessage = (event) => {
+        const { type, payload } = JSON.parse(event.data) as LiveConnectionMessage;
+
+        if (type === 'vote') {
+          const { roundId, choiceId } = payload;
+          onVote({ roundId, choiceId });
+          return;
+        }
+      };
     };
 
     attachDc(dc);
@@ -121,18 +131,6 @@ export const useLiveConnection = () => {
     guest.localSDP = JSON.stringify(pc.localDescription);
     setGuests((state) => [...state, guest]);
     setIsPreparingGuestOffer(false);
-  };
-
-  /**
-   * Apply answer SDP from Guest
-   */
-  const hostApplyAnswer = async (peerId: string, remoteSDP: string) => {
-    setIsApplyingAnswer(true);
-    const guest = guests.find((p) => p.id === peerId);
-    if (!guest) return;
-    setGuests((arg) => arg.map((x) => (x.id === guest.id ? { ...x, remoteSDP } : x)));
-    await guest.pc.setRemoteDescription(parseSDP(remoteSDP));
-    setIsApplyingAnswer(false);
   };
 
   /**
@@ -154,7 +152,14 @@ export const useLiveConnection = () => {
 
         if (type === 'start_vote') {
           const { roundId, pair } = payload;
+          onNewRound({ roundId, pair: pair.map((p) => p.id) as [number, number] });
           navigate('/vote', { state: { roundId, pair, role: 'guest' } });
+          return;
+        }
+
+        if (type === 'vote') {
+          const { roundId, choiceId } = payload;
+          onVote({ roundId, choiceId });
           return;
         }
       };
@@ -169,15 +174,26 @@ export const useLiveConnection = () => {
   };
 
   /**
+   * Apply answer SDP from Guest
+   */
+  const hostApplyAnswer = async (peerId: string, remoteSDP: string) => {
+    setIsApplyingAnswer(true);
+    const guest = guests.find((p) => p.id === peerId);
+    if (!guest) return;
+    setGuests((arg) => arg.map((x) => (x.id === guest.id ? { ...x, remoteSDP } : x)));
+    await guest.pc.setRemoteDescription(parseSDP(remoteSDP));
+    setIsApplyingAnswer(false);
+  };
+
+  /**
    * Sending message from Guest
    */
   const guestSendMessage = (msg: LiveConnectionMessage) => {
     const channel = guestDc;
     if (!channel || channel.readyState !== 'open') return alert('Data channel is not open.');
 
-    // TODO: Do something
-
     channel.send(JSON.stringify(msg));
+    messageToGuests(msg, guests);
   };
 
   /**

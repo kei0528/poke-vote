@@ -1,19 +1,30 @@
-import { useVoteContext } from '@/components/providers/VoteProvider';
+import { useLiveConnection } from '@/components/providers/LiveConnectionProvider';
+import { useVote } from '@/components/providers/VoteProvider';
 import LayoutGBA from '@/components/ui/Layout';
 import MessageBox from '@/components/ui/MessageBox';
 import StepActionYesNo from '@/components/ui/StepAction';
 import VoteCard from '@/components/ui/VoteCard';
+import type { LiveConnectionMessage } from '@/types/liveConnection.type';
 import type { Pokemon } from '@/types/pokemon.type';
-import { useState } from 'react';
-import { useLoaderData, useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 
 const Vote = () => {
-  const { pokemonsToVote } = useLoaderData<{
-    pokemonsToVote: [Pokemon, Pokemon];
-  }>();
-  const [pokemonSelected, setPokemonSelected] = useState<Pokemon | null>(null);
-  const { setPokemonVoted } = useVoteContext();
   const navigate = useNavigate();
+  const { state } = useLocation() as {
+    state?: { roundId: string; pair: [Pokemon, Pokemon] };
+  };
+  const { onVote } = useVote();
+  const { role, hostSendMessage, guestSendMessage } = useLiveConnection();
+  const [pokemonSelected, setPokemonSelected] = useState<Pokemon | null>(null);
+
+  useEffect(() => {
+    if (!state) {
+      navigate('/');
+    }
+  });
+
+  if (!state) return null;
 
   return (
     <LayoutGBA className="[&_[data-id='gba-inner']]:content-start [&_[data-id='gba-inner']]:gap-5 [&_[data-id='gba-inner']]:bg-[repeating-linear-gradient(0deg,#fffbff,#fffbff_10px,#F7EBC5_10px,#F7EBC5_20px)]">
@@ -23,7 +34,7 @@ const Vote = () => {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 md:gap-5">
-        {pokemonsToVote.map((pokemon) => (
+        {state?.pair.map((pokemon) => (
           <VoteCard pokemon={pokemon} onVote={(pokemon) => setPokemonSelected(pokemon)} />
         ))}
       </div>
@@ -34,8 +45,20 @@ const Vote = () => {
             className="mt-16 mr-4 ml-auto"
             action={{
               yes: () => {
-                setPokemonVoted(pokemonSelected);
-                navigate('/vote/result');
+                const action: LiveConnectionMessage = {
+                  type: 'vote',
+                  payload: {
+                    roundId: state.roundId,
+                    choiceId: pokemonSelected.id,
+                  },
+                };
+
+                onVote({ roundId: state.roundId, choiceId: pokemonSelected.id });
+
+                if (role === 'host') hostSendMessage(action);
+                if (role === 'guest') guestSendMessage(action);
+
+                navigate('/vote/result/' + state.roundId);
               },
               no: () => void setPokemonSelected(null),
             }}

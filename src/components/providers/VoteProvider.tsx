@@ -1,22 +1,23 @@
 import type { Pokemon } from '@/types/pokemon.type';
 import { createContext, useContext, useState } from 'react';
 
+type VoteResult = { roundId: string; tally: Record<Pokemon['id'], number> };
 const VoteContext = createContext<{
-  pokemonVoted: null | Pokemon;
-  setPokemonVoted: (pokemon: Pokemon) => void;
+  results: null | VoteResult[];
+  setResults: React.Dispatch<React.SetStateAction<VoteResult[]>>;
 }>({
-  pokemonVoted: null,
-  setPokemonVoted: () => {},
+  results: null,
+  setResults: () => [],
 });
 
 const VoteProvider = ({ children }: { children: React.ReactNode }) => {
-  const [pokemonVoted, setPokemonVoted] = useState<Pokemon | null>(null);
+  const [results, setResults] = useState<VoteResult[]>([]);
 
   return (
     <VoteContext.Provider
       value={{
-        pokemonVoted,
-        setPokemonVoted: (pokemon) => void setPokemonVoted(pokemon),
+        results,
+        setResults,
       }}
     >
       {children}
@@ -24,10 +25,36 @@ const VoteProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useVoteContext = () => {
-  const { pokemonVoted, setPokemonVoted } = useContext(VoteContext);
+export const useVote = () => {
+  const { results, setResults } = useContext(VoteContext);
 
-  return { pokemonVoted, setPokemonVoted };
+  function onNewRound({
+    roundId,
+    pair,
+  }: {
+    roundId: string;
+    pair: [Pokemon['id'], Pokemon['id']];
+  }) {
+    setResults((state) => [...(state ?? []), { roundId, tally: { [pair[0]]: 0, [pair[1]]: 0 } }]);
+  }
+
+  function onVote({ roundId, choiceId }: { roundId: string; choiceId: Pokemon['id'] }) {
+    setResults((state) =>
+      state.map((s) =>
+        s.roundId === roundId
+          ? {
+              ...s,
+              tally: {
+                ...s.tally,
+                [choiceId]: s.tally[choiceId] + 1,
+              },
+            }
+          : s
+      )
+    );
+  }
+
+  return { results, onVote, onNewRound };
 };
 
 export default VoteProvider;
