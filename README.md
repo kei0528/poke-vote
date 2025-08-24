@@ -18,6 +18,12 @@ pnpm i
 pnpm run dev
 ```
 
+## Branches
+
+assessment → Snapshot of the project as of the due date (2025/08/24 13:00).
+
+main → I’ll continue improving it beyond the assessment, since it’s a fun project!
+
 ## Features
 
 - Vote for Pokémon with your friends using Web RTC Datachannel
